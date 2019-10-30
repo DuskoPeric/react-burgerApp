@@ -4,6 +4,8 @@ import Burger from "../../components/Burger/Burger";
 import BurgerControls from "../../components/Burger/BurgerControls/BurgerControls";
 import Modal from "../../components/UI/Modal/Modal";
 import OrderSummary from "../../components/Burger/OrderSummary/OrderSummary";
+import axios from "../../axios-orders.js";
+import Spinner from "../../components/UI/Spinner/Spinner";
 
 const prices = {
   salad: 0.3,
@@ -14,17 +16,22 @@ const prices = {
 
 class BurgerBuilder extends Component {
   state = {
-    ingredients: {
-      salad: 0,
-      bacon: 0,
-      cheese: 0,
-      meat: 0
-    },
+    ingredients: null,
     costs: 0,
     purchase: true,
-    modal: false
+    modal: false,
+    loading: false
   };
 
+  componentDidMount() {
+    axios
+      .get("https://burger-6aa89.firebaseio.com/ingredients.json")
+      .then(response => {
+        const posts = response.data;
+        this.setState({ ingredients: posts });
+        console.log(this.state.ingredients);
+      });
+  }
   addIngredient = type => {
     const newIngredient = this.state.ingredients[type] + 1;
     const upgratedIngredients = { ...this.state.ingredients };
@@ -70,7 +77,31 @@ class BurgerBuilder extends Component {
   };
 
   continueModal = () => {
-    alert("Yep");
+    this.setState({ loading: true });
+    const order = {
+      ingredients: this.state.ingredients,
+      price: this.state.costs,
+      customer: {
+        name: "Dusko",
+        addres: {
+          street: "Cankareva",
+          number: 13
+        }
+      },
+      delivery: "fast"
+    };
+    axios
+      .post("/orders.json", order)
+      .then(response => {
+        console.log(response);
+        this.setState({ loading: false });
+        this.setState({ modal: false });
+      })
+      .catch(error => {
+        this.setState({ loading: false });
+        this.setState({ modal: false });
+        console.log(error);
+      });
   };
 
   render() {
@@ -79,25 +110,41 @@ class BurgerBuilder extends Component {
       disabledList[key] = this.state.ingredients[key] <= 0;
     }
     console.log(disabledList);
-    return (
-      <Aux>
-        <Modal show={this.state.modal} modalClosed={this.hideModal}>
+    let orderSummary;
+    if (this.state.loading) {
+      orderSummary = <Spinner />;
+    } else {
+      if (this.state.ingredients) {
+        orderSummary = (
           <OrderSummary
             ingredients={this.state.ingredients}
             continue={this.continueModal}
             cancel={this.hideModal}
             total={this.state.costs}
           />
+        );
+      }
+    }
+    return (
+      <Aux>
+        <Modal show={this.state.modal} modalClosed={this.hideModal}>
+          {orderSummary}
         </Modal>
-        <Burger ingredients={this.state.ingredients} />
-        <BurgerControls
-          addIngrenient={this.addIngredient}
-          removeIngrenient={this.removeIngredient}
-          disabledList={disabledList}
-          price={this.state.costs}
-          purchase={this.state.purchase}
-          show={this.showModal}
-        />
+        {this.state.ingredients ? (
+          <Aux>
+            <Burger ingredients={this.state.ingredients} />
+            <BurgerControls
+              addIngrenient={this.addIngredient}
+              removeIngrenient={this.removeIngredient}
+              disabledList={disabledList}
+              price={this.state.costs}
+              purchase={this.state.purchase}
+              show={this.showModal}
+            />
+          </Aux>
+        ) : (
+          <p>No ingredients</p>
+        )}
       </Aux>
     );
   }
