@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import Order from "../../components/Order/Order";
-import axios from "../../axios-orders";
+import { connect } from "react-redux";
+import * as OrderActions from "../../store/actions/";
 
 class Orders extends Component {
   state = {
@@ -8,24 +9,12 @@ class Orders extends Component {
     loading: true
   };
   componentDidMount() {
-    axios
-      .get("orders.json")
-      .then(response => {
-        const fetchedOrders = [];
-        for (let key in response.data) {
-          fetchedOrders.push({ ...response.data[key], id: key });
-        }
-        this.setState({ loading: false, orders: fetchedOrders });
-        console.log(this.state.orders);
-      })
-      .catch(error => {
-        console.log(error);
-      });
+    this.props.getOrders(this.props.token, this.props.userId);
   }
   render() {
     return (
       <div>
-        {this.state.orders.map(order => {
+        {this.props.orders.map(order => {
           return (
             <Order
               key={order.id}
@@ -39,4 +28,23 @@ class Orders extends Component {
   }
 }
 
-export default Orders;
+const mapStateToProps = state => {
+  return {
+    orders: state.order.orders,
+    token: state.auth.token,
+    userId: state.auth.userId
+  };
+};
+
+const mapDispatchToProps = dispatch => {
+  return {
+    getOrders: (token, id) => {
+      return dispatch(OrderActions.getOrders(token, id));
+    }
+  };
+};
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(Orders);

@@ -1,6 +1,7 @@
 import React, { Component } from "react";
 import classes from "./BurgerControls.css";
 import BurgerControl from "./BurgerControl/BurgerControl";
+import { connect } from "react-redux";
 
 const controls = [
   { label: "Meat", type: "meat" },
@@ -36,11 +37,17 @@ class BurgerControls extends Component {
           disabled={this.props.purchase}
           onClick={this.props.show}
         >
-          ORDER NOW
+          {this.props.isAuth ? "ORDER NOW" : "LOG IN TO ORDER"}
         </button>
       </div>
     );
   }
 }
 
-export default BurgerControls;
+const mapStateToProps = state => {
+  return {
+    isAuth: state.auth.token !== null
+  };
+};
+
+export default connect(mapStateToProps)(BurgerControls);

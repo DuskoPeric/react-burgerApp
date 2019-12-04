@@ -1,11 +1,10 @@
 import React, { Component } from "react";
-import * as actionTypes from "../../store/actions";
+import * as BurgerBuilderActions from "../../store/actions/";
 import Aux from "../../hoc/Auxy";
 import Burger from "../../components/Burger/Burger";
 import BurgerControls from "../../components/Burger/BurgerControls/BurgerControls";
 import Modal from "../../components/UI/Modal/Modal";
 import OrderSummary from "../../components/Burger/OrderSummary/OrderSummary";
-import axios from "../../axios-orders.js";
 import Spinner from "../../components/UI/Spinner/Spinner";
 import { connect } from "react-redux";
 
@@ -17,12 +16,10 @@ class BurgerBuilder extends Component {
   };
 
   componentDidMount() {
-    // axios
-    //   .get("https://burger-6aa89.firebaseio.com/ingredients.json")
-    //   .then(response => {
-    //     const posts = response.data;
-    //     this.setState({ ingredients: posts });
-    //   });
+    if (!this.props.ings) {
+      this.props.initIngredients();
+    }
+    this.props.setToFalseRedirect();
   }
 
   isForPurchase = ingredients => {
@@ -33,12 +30,15 @@ class BurgerBuilder extends Component {
       .reduce((sum, i) => {
         return sum + i;
       }, 0);
-    console.log(sum);
     return sum > 0;
   };
 
   showModal = () => {
-    this.setState({ modal: true });
+    if (this.props.isAuth) {
+      this.setState({ modal: true });
+    } else {
+      this.props.history.push("/auth");
+    }
   };
   hideModal = () => {
     this.setState({ modal: false });
@@ -86,7 +86,7 @@ class BurgerBuilder extends Component {
             />
           </Aux>
         ) : (
-          <p>No ingredients</p>
+          <Spinner />
         )}
       </Aux>
     );
@@ -96,20 +96,21 @@ class BurgerBuilder extends Component {
 const mapDispatchToProps = dispatch => {
   return {
     onIngredientsAdded: ingName => {
-      return dispatch({
-        type: actionTypes.ADD_INGREDIENT,
-        ingredientName: ingName
-      });
+      return dispatch(BurgerBuilderActions.addIngredient(ingName));
     },
     onIngredientsRemoved: ingName =>
-      dispatch({ type: actionTypes.REMOVE_INGREDIENT, ingredientName: ingName })
+      dispatch(BurgerBuilderActions.removeIngredient(ingName)),
+    initIngredients: () => dispatch(BurgerBuilderActions.initIngredients()),
+    setToFalseRedirect: () => dispatch(BurgerBuilderActions.redirectFalse())
   };
 };
 
 const mapStateToProps = state => {
   return {
-    ings: state.ingredients,
-    prices: state.costs
+    ings: state.burgerBuilder.ingredients,
+    prices: state.burgerBuilder.costs,
+    justorder: state.burgerBuilder.justorder,
+    isAuth: state.auth.token !== null
   };
 };
 

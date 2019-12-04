@@ -3,7 +3,6 @@ import classes from "./Button.css";
 
 class Button extends Component {
   render() {
-    console.log(this.props.disabled);
     return (
       <button
         className={[classes.Button, classes[this.props.btnType]].join(" ")}

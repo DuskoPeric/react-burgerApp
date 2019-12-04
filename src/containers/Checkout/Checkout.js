@@ -11,7 +11,6 @@ class Checkout extends Component {
   };
 
   chContinueH = () => {
-    console.log("edbhw");
     this.props.history.replace("/checkout/contact-data");
   };
 
@@ -34,7 +33,7 @@ class Checkout extends Component {
 
 const mapStateToProps = state => {
   return {
-    ings: state.ingredients
+    ings: state.burgerBuilder.ingredients
   };
 };
 

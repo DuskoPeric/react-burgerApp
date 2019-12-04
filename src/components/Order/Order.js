@@ -6,7 +6,6 @@ class Order extends Component {
     const ingredientsArr = [];
 
     for (let item in this.props.ingredients) {
-      //console.log(item);
       ingredientsArr.push({ name: item, value: this.props.ingredients[item] });
     }
     const ingredientsOutput = ingredientsArr.map(item => {

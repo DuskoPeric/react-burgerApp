@@ -14,7 +14,7 @@ class SideDrawer extends Component {
     return (
       <Aux>
         <Backdrop show={this.props.open} clicked={this.props.closed} />
-        <div className={attachedClasses.join(" ")}>
+        <div className={attachedClasses.join(" ")} onClick={this.props.closed}>
           <div className={classes.Logo}>
             <Logo></Logo>
           </div>

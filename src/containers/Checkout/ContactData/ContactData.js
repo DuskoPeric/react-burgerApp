@@ -1,10 +1,12 @@
 import React, { Component } from "react";
 import Button from "../../../components/UI/Button/Button";
 import classes from "./ContactData.css";
-import axios from "../../../axios-orders.js";
 import Spinner from "../../../components/UI/Spinner/Spinner";
 import Input from "../../../components/UI/Input/Input";
 import { connect } from "react-redux";
+import { Redirect } from "react-router-dom";
+import * as OrderActions from "../../../store/actions/";
+import { checkValidity } from "../../../shared/utility";
 
 class ContactData extends Component {
   state = {
@@ -30,7 +32,8 @@ class ContactData extends Component {
         },
         value: "",
         validation: {
-          required: true
+          required: true,
+          isEmail: true
         },
         valid: false,
         touched: false
@@ -57,7 +60,7 @@ class ContactData extends Component {
         value: "",
         validation: {
           required: true,
-          minLenght: 3
+          minLength: 3
         },
         valid: false,
         touched: false
@@ -88,67 +91,37 @@ class ContactData extends Component {
         valid: true
       }
     },
-    isFormValid: false,
-    loading: false
+    isFormValid: false
   };
 
-  componentDidMount() {
-    console.log("mount");
-  }
-  componentDidUpdate() {
-    console.log(this.state.isFormValid);
-    console.log("update");
-  }
+  componentDidMount() {}
+  componentDidUpdate() {}
   orderHandler = event => {
+    this.props.onStartLoader();
     event.preventDefault();
-    this.setState({ loading: true });
     const orderDetail = {};
     for (let item in this.state.orderForm) {
       orderDetail[item] = this.state.orderForm[item].value;
     }
     const order = {
       ingredients: this.props.ings,
-      price: this.props.costs,
-      orderDetail: orderDetail
+      price: this.props.price,
+      orderDetail: orderDetail,
+      userId: this.props.userId
     };
-    axios
-      .post("/orders.json", order)
-      .then(response => {
-        console.log(response);
-        this.setState({ loading: false });
-        this.props.history.push("/");
-      })
-      .catch(error => {
-        this.setState({ loading: false });
-        console.log(error);
-      });
+    this.props.onSubmitedForm(order, this.props.token);
   };
-
-  checkValidity(value, rules) {
-    let isValid = true;
-
-    if (rules.required) {
-      isValid = value.trim() != "" && isValid;
-    }
-
-    if (rules.minLenght) {
-      isValid = value.length >= rules.minLenght && isValid;
-    }
-
-    return isValid;
-  }
 
   inputChangedHandler = (event, id) => {
     const orderFormCopy = { ...this.state.orderForm };
     orderFormCopy[id].value = event.target.value;
     orderFormCopy[id].touched = true;
-    orderFormCopy[id].valid = this.checkValidity(
+    orderFormCopy[id].valid = checkValidity(
       orderFormCopy[id].value,
       orderFormCopy[id].validation
     );
     let isValidForm = true;
     for (let item in orderFormCopy) {
-      //console.log(item + ": " + orderFormCopy[item].valid + " " + isValidForm);
       isValidForm = orderFormCopy[item].valid && isValidForm;
     }
     this.setState({ orderForm: orderFormCopy, isFormValid: isValidForm });
@@ -162,7 +135,6 @@ class ContactData extends Component {
         config: this.state.orderForm[key]
       });
     }
-    console.log(inputArr);
     const formtoShow = inputArr.map(item => {
       return (
         <Input
@@ -177,6 +149,10 @@ class ContactData extends Component {
         />
       );
     });
+    let redirect = null;
+    if (this.props.isRedirect) {
+      redirect = <Redirect to="/" />;
+    }
     let form = (
       <form onSubmit={this.orderHandler}>
         {formtoShow}
@@ -186,11 +162,12 @@ class ContactData extends Component {
         </Button>
       </form>
     );
-    if (this.state.loading) {
+    if (this.props.loading) {
       form = <Spinner />;
     }
     return (
       <div className={classes.ContactData}>
+        {redirect}
         <h4>Enter your Contact Data</h4>
         {form}
       </div>
@@ -200,9 +177,30 @@ class ContactData extends Component {
 
 const mapStateToProps = state => {
   return {
-    ings: state.ingredients,
-    price: state.costs
+    ings: state.burgerBuilder.ingredients,
+    price: state.burgerBuilder.costs,
+    loading: state.order.loading,
+    isRedirect: state.order.redirect,
+    token: state.auth.token,
+    userId: state.auth.userId
   };
 };
 
-export default connect(mapStateToProps)(ContactData);
+const mapDispatchToProps = dispatch => {
+  return {
+    onSubmitedForm: (order, token) => {
+      return dispatch(OrderActions.purchaseBurgerOrder(order, token));
+    },
+    onEndLoader: () => {
+      dispatch(OrderActions.purchaseBurgerEnd());
+    },
+    onStartLoader: () => {
+      dispatch(OrderActions.purchaseBurgerStart());
+    }
+  };
+};
+
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(ContactData);

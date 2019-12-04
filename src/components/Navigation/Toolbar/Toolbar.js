@@ -14,7 +14,7 @@ class Toolbar extends Component {
         </div>
 
         <nav className={classes.DesktopOnly}>
-          <NavigationItems />
+          <NavigationItems isAuth={this.props.isAuth} />
         </nav>
       </header>
     );
